@@ -74,9 +74,29 @@ def scale(tensor):
     numRange = maxVal - medVal
     tensor -= medVal
     tensor /= numRange
+    
+    
+def simple_scale(tensor, top_percent = 1, low_percent = 1):
+    
+    minVal = torch.min(tensor)
+    print("orig min ", minVal)
+    minVal = get_top_percent(tensor, 100 - low_percent)
+    tensor -= minVal
+    print("minval: ", minVal)
+    maxVal = torch.max(tensor)
+    print("orig max ", maxVal)
+    maxVal = get_top_percent(tensor, top_percent)
+    print("maxVal: ", maxVal)
+    #tensor = torch.clamp(tensor, 0, maxVal)
+    tensor /= maxVal
 
+def get_top_percent(tensor, percent):
+    idx = int(tensor.nelement() * percent / 100)
+    flat = tensor.flatten()
+    return torch.topk(flat, idx)[0][-1]
+    
 def att_imshow(inp, att, title=None):
-    """Imshow for Tensor."""
+    """Overlay attributions over input image"""
     inp = inp.numpy().transpose((1, 2, 0))
     mean = np.array([0.485, 0.456, 0.406])
     std = np.array([0.229, 0.224, 0.225])
@@ -92,7 +112,8 @@ def att_imshow(inp, att, title=None):
 
 def heatmap_imshow(att, title = None):
     inp = np.clip(att, 0, 1)
-    plt.imshow(inp.numpy())
+    inp = att
+    plt.imshow(inp.numpy(), cmap = "gray_r")
     if title is not None:
         plt.title(title)
     plt.pause(0.001)  # pause a bit so that plots are updated
